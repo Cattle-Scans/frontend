@@ -30,10 +30,15 @@ function useBreedInfo(breedName: string | null) {
 
       const { data, error } = await supabase
         .from("breeds")
-        .select("*")
+        .select(`
+    *,
+    breed_origins (
+      parent_breed,
+      contribution_percentage
+    )
+  `)
         .eq("name", breedName)
-        .single();
-
+        .single(); //
       if (error) throw new Error(error.message);
       return data;
     },
@@ -381,6 +386,14 @@ export default function Scan() {
                                         <p>
                                           <strong>Key Traits:</strong>{" "}
                                           {breedInfo.key_characteristics.join(", ")}
+                                        </p>
+                                      )}
+                                      {breedInfo.breed_origins?.length > 0 && (
+                                        <p>
+                                          <strong>Origins:</strong>{" "}
+                                          {breedInfo.breed_origins
+                                            .map((o: any) => `${o.parent_breed} (${o.contribution_percentage}%)`)
+                                            .join(", ")}
                                         </p>
                                       )}
                                     </div>

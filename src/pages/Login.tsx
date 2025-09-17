@@ -104,10 +104,17 @@ export default function Login() {
             onClick={signOut}
             className="w-full border border-gray-200 hover:bg-gray-100 flex items-center justify-center font-semibold text-black py-2 rounded-lg hover:cursor-pointer transition"
           >
-            Log Out <LogOutIcon className="ml-2 w-4 h-4" />
+            Log Out <LogOutIcon className="ml-2 w-4 h-4 text-green-800" />
 
           </button>
         </div>
+        {session.user.user_metadata.role === "admin" && <a
+          href="/admin" target="_blank" rel="noopener noreferrer"
+          className="px-25 border mt-10 border-gray-200 hover:bg-gray-100 bg-white flex items-center justify-center font-semibold text-black py-2 rounded-lg hover:cursor-pointer transition"
+        >
+          Access Admin Portal <LogIn className="ml-2 text-green-800 w-4 h-4" />
+        </a>
+        }
       </div>
     )
   }
