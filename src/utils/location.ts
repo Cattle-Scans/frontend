@@ -1,5 +1,4 @@
 // src/utils/geolocation.ts
-import { toast } from "sonner";
 
 export interface Coordinates {
   latitude: number;

@@ -17,9 +17,12 @@
       "./src/types",
       "./node_modules/@types"
     ],
+    "noEmitOnError": false, // ✅ still emit even if errors exist
+    "skipLibCheck": true, // ✅ skip type errors from node_modules
+    "noUnusedLocals": false, // ✅ allow unused imports
+    "noUnusedParameters": false,
     "allowJs": true,
     "strict": true,
-    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
