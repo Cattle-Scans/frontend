@@ -24,7 +24,7 @@ interface Breed {
   conservation_status: "Commom" | "Rare" | "Endangered";
   stock_img_url: string | null;
   created_at: string;
-  breed_origins?: { region: string; country: string }[];
+  breed_origins: { parent_breed: string; contribution_percentage: number }[];
 }
 
 interface ConfirmedCattle {
@@ -35,7 +35,11 @@ interface ConfirmedCattle {
 // --- Fetch Functions ---
 const fetchBreeds = async (filters: any, search: string) => {
   let query = supabase.from("breeds").select(`
-    *
+    *,
+    breed_origins (
+      parent_breed,
+      contribution_percentage
+    )
     `);
   // breed_origins(region, country)
 
@@ -323,14 +327,14 @@ export default function ExplorePage() {
                     <strong>Conservation Status:</strong>{" "}
                     {selectedBreed.conservation_status}
                   </p>
-                  {selectedBreed.breed_origins?.length ? (
+                  {selectedBreed && selectedBreed.breed_origins?.length > 0 && (
                     <p>
-                      <strong>Origins:</strong>{" "}
+                      <strong>Genetical Origins:</strong>{" "}
                       {selectedBreed.breed_origins
-                        .map((o) => `${o.region}, ${o.country}`)
-                        .join("; ")}
+                        .map((o: any) => `${o.parent_breed} (${o.contribution_percentage}%)`)
+                        .join(", ")}
                     </p>
-                  ) : null}
+                  )}
                 </div>
               </div>
 

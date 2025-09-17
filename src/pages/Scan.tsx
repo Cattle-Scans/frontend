@@ -390,7 +390,7 @@ export default function Scan() {
                                       )}
                                       {breedInfo.breed_origins?.length > 0 && (
                                         <p>
-                                          <strong>Origins:</strong>{" "}
+                                          <strong>Genetical Origins:</strong>{" "}
                                           {breedInfo.breed_origins
                                             .map((o: any) => `${o.parent_breed} (${o.contribution_percentage}%)`)
                                             .join(", ")}
