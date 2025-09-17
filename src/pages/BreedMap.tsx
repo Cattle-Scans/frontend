@@ -125,7 +125,7 @@ export default function BreedMapPage() {
       {/* Error */}
       {error && (
         <div className="absolute inset-0 bg-gradient-to-b from-green-100 to-white bg-opacity-80 flex items-center justify-center z-[1001]">
-          <p className=" text-xl font-semibold">Error: {error}</p>
+          <p className=" text-xl font-semibold">Error: {error}, Please Refresh</p>
         </div>
       )}
 

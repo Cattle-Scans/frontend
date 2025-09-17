@@ -41,7 +41,7 @@ function App() {
               to="/breed-map"
               className={isActive("/breed-map") ? "text-green-700 underline" : ""}
             >
-              Breed Map
+              Map
             </Link>
             <Link
               to="/login"
