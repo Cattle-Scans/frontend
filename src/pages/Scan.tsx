@@ -19,7 +19,7 @@ interface ScanResult {
   error: string | null;
 }
 
-const ML_API = import.meta.env.BACKEND_API_BASE as string;
+const ML_API = "https://backend-afya.onrender.com" as string;
 
 
 function useBreedInfo(breedName: string | null) {
@@ -65,11 +65,12 @@ export default function Scan() {
       toast.loading("Analyzing image...");
       const formData = new FormData();
       formData.append("image", file);
-
-      const res = await fetch(`${ML_API}/scan`, {
+      console.log(formData, ML_API)
+      const res = await fetch(ML_API, {
         method: "POST",
         body: formData,
       });
+
 
       if (!res.ok) throw new Error("Failed to scan");
       const data = (await res.json()) as ScanResult;
@@ -109,7 +110,6 @@ export default function Scan() {
     },
     onSuccess: (publicUrl) => {
       toast.dismiss();
-      toast.success("Image uploaded!");
       saveDataMutation.mutate(publicUrl);
     },
     onError: (err: Error) => {
@@ -143,7 +143,7 @@ export default function Scan() {
     onSuccess: (id) => {
       setScanId(id);
       toast.dismiss();
-      toast.success("Scan saved!");
+      toast.success("Scan saved to cloud!");
     },
     onError: (err: Error) => {
       toast.dismiss();
