@@ -19,6 +19,9 @@ interface ScanResult {
   error: string | null;
 }
 
+const ML_API = import.meta.env.BACKEND_API_BASE as string;
+
+
 function useBreedInfo(breedName: string | null) {
   return useQuery({
     queryKey: ["breed-info", breedName],
@@ -63,7 +66,7 @@ export default function Scan() {
       const formData = new FormData();
       formData.append("image", file);
 
-      const res = await fetch("http://localhost:3000/scan", {
+      const res = await fetch(`${ML_API}/scan`, {
         method: "POST",
         body: formData,
       });
