@@ -60,7 +60,6 @@ function App() {
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/breed-map" element={<BreedMapPage />} />
           <Route path="/admin" element={<AdminPage />} />
-
         </Routes>
       </div>
     </>
