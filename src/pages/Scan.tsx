@@ -22,7 +22,6 @@ import {
 } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
-import { Progress } from "../components/ui/progress";
 
 interface ScanResult {
   data: Record<string, string> | null;
