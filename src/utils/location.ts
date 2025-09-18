@@ -6,32 +6,6 @@ export interface Coordinates {
   accuracy: number;
 }
 
-// --- Native Browser GPS ---
-export const getCurrentLocation = (): Promise<Coordinates> => {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      return reject("Geolocation is not supported by your browser.");
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy, // meters
-        });
-      },
-      (error) => {
-        reject(error.message);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000, // 10s
-        maximumAge: 0,
-      }
-    );
-  });
-};
 
 // --- IP Fallback (IPInfo) ---
 export const getLocationFromIP = async (): Promise<Coordinates> => {
@@ -52,7 +26,12 @@ export const getLocationFromIP = async (): Promise<Coordinates> => {
 };
 
 // --- Hybrid Method ---
-export const getBestLocation = async (): Promise<Coordinates> => {
-  const ip = await getLocationFromIP();
-  return ip;
+export const getBestLocation = async () => {
+  try {
+    const ip = await getLocationFromIP();
+    return { error: null, data: ip };
+
+  } catch (error: Error | any) {
+    return { error: error.message, data: null };
+  }
 };

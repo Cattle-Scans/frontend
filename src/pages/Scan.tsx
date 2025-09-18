@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
+import { getBestLocation } from "../utils/location";
 
 interface ScanResult {
   data: Record<string, string> | null;
@@ -124,7 +125,7 @@ export default function Scan() {
     mutationFn: async (imageUrl: string) => {
       toast.loading("Saving scan data...");
       if (!scanMutation.data?.data) throw new Error("No scan results to save");
-      // const locations = await getCurrentLocation();
+      const location = await getBestLocation();
 
       const { data, error } = await supabase
         .from("cattle_scans")
@@ -132,7 +133,7 @@ export default function Scan() {
           {
             image_url: imageUrl,
             ai_prediction: scanMutation.data.data,
-            location,
+            location: location.error ? null : location.data,
             scanned_by_user_id: user?.id ?? null,
           },
         ])
