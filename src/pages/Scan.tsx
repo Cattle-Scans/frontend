@@ -50,18 +50,21 @@ export default function Scan() {
 
   const [file, setFile] = useState<File | null>(null);
   const [scanId, setScanId] = useState<string | null>(null);
-  const [inspectionReason, setInspectionReason] = useState("");
+  const [commentText, setCommentText] = useState("");
+  const [isFlagged, setIsFlagged] = useState(false);
 
   // Reset state
   const handleReset = () => {
     setFile(null);
     setScanId(null);
-    setInspectionReason("");
+    setCommentText("");
+    setIsFlagged(false);
     scanMutation.reset();
     uploadMutation.reset();
     saveDataMutation.reset();
     reviewMutation.reset();
     flagMutation.reset();
+    commentMutation.reset();
   };
 
   // 1️⃣ SCAN IMAGE (FastAPI backend on HF Space)
@@ -181,20 +184,44 @@ export default function Scan() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // 5️⃣ FLAG
-  const flagMutation = useMutation({
-    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+  // 5️⃣ COMMENT
+  const commentMutation = useMutation({
+    mutationFn: async ({ id, comment }: { id: string; comment: string }) => {
       if (!user) throw new Error("Login required");
       const { error } = await supabase
         .from("cattle_scans")
-        .update({
-          flagged_for_inspection: true,
-          inspection_reason: reason,
-        })
+        .update({ comment })
         .eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => toast.success("Flag submitted!"),
+    onSuccess: () => {
+      toast.success("Comment submitted!");
+      setCommentText("");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // 6️⃣ FLAG (Toggle)
+  const flagMutation = useMutation({
+    mutationFn: async ({
+      id,
+      flagged,
+    }: {
+      id: string;
+      flagged: boolean;
+    }) => {
+      if (!user) throw new Error("Login required");
+      const { error } = await supabase
+        .from("cattle_scans")
+        .update({ flagged_for_inspection: flagged })
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: (_, { flagged }) => {
+      toast.success(
+        flagged ? "Flag marked for inspection!" : "Flag removed."
+      );
+    },
     onError: (err: Error) => toast.error(err.message),
   });
 
@@ -218,6 +245,7 @@ export default function Scan() {
     scanMutation.mutate(file);
   };
 
+  // ------------- JSX -------------
   return (
     <div className="min-h-screen ">
       {/* Header */}
@@ -308,8 +336,8 @@ export default function Scan() {
                   <div
                     key={pred.label}
                     className={`flex items-center justify-between p-3 rounded-xl border ${i === 0
-                      ? "bg-green-50 border-green-200"
-                      : "bg-gray-50 border-gray-200"
+                        ? "bg-green-50 border-green-200"
+                        : "bg-gray-50 border-gray-200"
                       }`}
                   >
                     <span className="font-medium text-gray-800">
@@ -341,7 +369,8 @@ export default function Scan() {
                   <strong>Origin:</strong> {breedInfo.origin}
                 </p>
                 <p>
-                  <strong>Conservation:</strong> {breedInfo.conservation_status}
+                  <strong>Conservation:</strong>{" "}
+                  {breedInfo.conservation_status}
                 </p>
                 <p>
                   <strong>Adaptability:</strong> {breedInfo.adaptability}
@@ -352,48 +381,6 @@ export default function Scan() {
                 <p>
                   <strong>Description:</strong> {breedInfo.description}
                 </p>
-
-                {breedInfo.avg_milk_yield_min &&
-                  breedInfo.avg_milk_yield_max && (
-                    <p>
-                      <strong>Milk Yield:</strong>{" "}
-                      {breedInfo.avg_milk_yield_min} –{" "}
-                      {breedInfo.avg_milk_yield_max} {breedInfo.milk_yield_unit}
-                    </p>
-                  )}
-
-                {breedInfo.avg_body_weight_min &&
-                  breedInfo.avg_body_weight_max && (
-                    <p>
-                      <strong>Body Weight:</strong>{" "}
-                      {breedInfo.avg_body_weight_min} –{" "}
-                      {breedInfo.avg_body_weight_max}{" "}
-                      {breedInfo.body_weight_unit}
-                    </p>
-                  )}
-
-                {breedInfo.native_region && (
-                  <p>
-                    <strong>Native Region:</strong> {breedInfo.native_region}
-                  </p>
-                )}
-
-                {breedInfo.key_characteristics?.length > 0 && (
-                  <p>
-                    <strong>Key Traits:</strong>{" "}
-                    {breedInfo.key_characteristics.join(", ")}
-                  </p>
-                )}
-
-                {breedInfo.stock_img_url && (
-                  <div className="mt-4">
-                    <img
-                      src={breedInfo.stock_img_url}
-                      alt={`${breedInfo.name} stock`}
-                      className="w-full max-h-64 object-cover rounded-lg shadow-md"
-                    />
-                  </div>
-                )}
               </div>
             )}
           </section>
@@ -428,6 +415,34 @@ export default function Scan() {
           </Card>
         )}
 
+        {/* Comment */}
+        {scanId && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">Add Comment</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Write your comment..."
+              />
+              <Button
+                className="cursor-pointer px-4 py-2 rounded-xl shadow-md bg-green-600 hover:bg-green-700 text-white"
+                disabled={commentMutation.isPending || !commentText}
+                onClick={() =>
+                  commentMutation.mutate({
+                    id: scanId!,
+                    comment: commentText,
+                  })
+                }
+              >
+                {commentMutation.isPending ? "Submitting..." : "Submit Comment"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Flag */}
         {scanId && (
           <Card>
@@ -437,22 +452,21 @@ export default function Scan() {
                 Flag for Inspection
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Textarea
-                value={inspectionReason}
-                onChange={(e) => setInspectionReason(e.target.value)}
-                placeholder="Reason for flagging..."
-              />
-              <Button
-                variant="destructive"
-                className="cursor-pointer px-4 py-2 rounded-xl shadow-md"
-                disabled={flagMutation.isPending || !inspectionReason}
-                onClick={() =>
-                  flagMutation.mutate({ id: scanId!, reason: inspectionReason })
-                }
-              >
-                {flagMutation.isPending ? "Submitting..." : "Submit Flag"}
-              </Button>
+            <CardContent>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isFlagged}
+                  onChange={(e) => {
+                    setIsFlagged(e.target.checked);
+                    flagMutation.mutate({ id: scanId!, flagged: e.target.checked });
+                  }}
+                  className="w-5 h-5 text-red-600 accent-red-600"
+                />
+                <span className="text-gray-800 font-medium">
+                  {isFlagged ? "Marked for inspection" : "Not flagged"}
+                </span>
+              </label>
             </CardContent>
           </Card>
         )}
