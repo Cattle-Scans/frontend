@@ -266,7 +266,7 @@ export default function ExplorePage() {
           <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden relative">
             {/* Close */}
             <button
-              className="absolute top-4 right-4 text-gray-600 hover:text-black"
+              className="cursor-pointer absolute top-4 right-4 text-gray-600 hover:text-black"
               onClick={() => setSelectedBreed(null)}
             >
               <X className="w-6 h-6" />

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { supabase } from "../lib/supabase";
 import L, { DivIcon } from "leaflet";
 import { LoaderCircle } from "lucide-react";
-import "leaflet.heat"; // npm install leaflet.heat
+import "leaflet.heat";
 
 // --- Types ---
 interface ConfirmedBreed {
@@ -13,9 +13,9 @@ interface ConfirmedBreed {
   breed: string;
   image_url: string;
 }
-type HeatmapData = [number, number, number]; // [lat, lng, intensity]
+type HeatmapData = [number, number, number];
 
-// --- Heatmap Layer Component ---
+// --- Heatmap Layer ---
 interface HeatLayerProps {
   points: HeatmapData[];
   options?: any;
@@ -72,11 +72,7 @@ export default function BreedMapPage() {
 
       data?.forEach((row: any) => {
         const loc = row.cattle_scans?.location;
-        if (!loc) return;
-
-        // Normalize location (supports {latitude, longitude} OR GeoJSON Point)
-
-        if (!loc.latitude || !loc.longitude) return;
+        if (!loc?.latitude || !loc?.longitude) return;
 
         const breedName = row.breeds?.name;
         if (!breedName) return;
@@ -99,7 +95,6 @@ export default function BreedMapPage() {
     fetchConfirmedBreeds();
   }, []);
 
-  // --- Filtered data ---
   const filteredData =
     selectedBreed === "All"
       ? breedsData
@@ -111,30 +106,36 @@ export default function BreedMapPage() {
   const tileUrl = `https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=${stadiaApiKey}`;
 
   return (
-    <div className="relative w-screen h-screen">
+    <div className="fixed inset-0 w-full h-full rounded-xl">
       {/* Loading */}
       {loading && (
-        <div className="absolute inset-0 bg-gradient-to-b from-green-100 to-white bg-opacity-50 flex items-center justify-center z-[1001]">
-          <div className="text-center">
-            <LoaderCircle className="h-12 w-12 animate-spin mx-auto mb-4" />
-            <p className="text-xl font-semibold">Loading Breed Data...</p>
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-md flex items-center justify-center z-[1001]">
+          <div className="text-center animate-pulse">
+            <LoaderCircle className="h-12 w-12 animate-spin mx-auto mb-4 text-green-600" />
+            <p className="text-lg font-semibold text-gray-700">
+              Loading Breed Data...
+            </p>
           </div>
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div className="absolute inset-0 bg-gradient-to-b from-green-100 to-white bg-opacity-80 flex items-center justify-center z-[1001]">
-          <p className=" text-xl font-semibold">Error: {error}, Please Refresh</p>
+        <div className="absolute inset-0 flex items-center justify-center z-[1001]">
+          <div className="bg-white/90 backdrop-blur-lg px-6 py-4 rounded-xl shadow-xl">
+            <p className="text-red-600 font-semibold">
+              Error: {error}, Please Refresh
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Map Controls */}
-      <div className="absolute top-4 right-4 z-[1000] bg-gradient-to-b from-green-100 to-white rounded-xl shadow-xl p-4 space-y-4 w-[260px] backdrop-blur-sm">
+      {/* Control Panel */}
+      <div className="absolute top-30 right-4 z-[1000] bg-white/90 backdrop-blur-lg rounded-xl shadow-xl p-4 space-y-4 w-[260px]">
         <div>
           <label
             htmlFor="breed-filter"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-semibold text-gray-700 mb-1"
           >
             Filter by Breed
           </label>
@@ -142,7 +143,7 @@ export default function BreedMapPage() {
             id="breed-filter"
             value={selectedBreed}
             onChange={(e) => setSelectedBreed(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500"
+            className="w-full cursor-pointer p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
           >
             {allBreeds.map((breed) => (
               <option key={breed} value={breed}>
@@ -153,14 +154,14 @@ export default function BreedMapPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
             View Mode
           </label>
           <div className="flex overflow-hidden rounded-lg border border-gray-200">
             <button
               onClick={() => setViewMode("points")}
-              className={`flex-1 p-2 text-sm transition ${viewMode === "points"
-                ? "bg-green-500 text-white"
+              className={`flex-1 p-2 cursor-pointer text-sm transition ${viewMode === "points"
+                ? "bg-green-600 text-white"
                 : "bg-white hover:bg-gray-100"
                 }`}
             >
@@ -168,8 +169,8 @@ export default function BreedMapPage() {
             </button>
             <button
               onClick={() => setViewMode("heatmap")}
-              className={`flex-1 p-2 text-sm transition ${viewMode === "heatmap"
-                ? "bg-green-500 text-white"
+              className={`flex-1 p-2 cursor-pointer  text-sm transition ${viewMode === "heatmap"
+                ? "bg-green-600 text-white"
                 : "bg-white hover:bg-gray-100"
                 }`}
             >
@@ -179,15 +180,17 @@ export default function BreedMapPage() {
         </div>
       </div>
 
+
+
       {/* Map */}
       <MapContainer
         center={[20.5937, 78.9629]}
         zoom={5}
-        scrollWheelZoom={true}
+        scrollWheelZoom
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://www.openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+          attribution='&copy; <a href="https://www.stadiamaps.com/">Stadia Maps</a>'
           url={tileUrl}
         />
 
@@ -199,11 +202,11 @@ export default function BreedMapPage() {
               icon={createPulseIcon(scan.breed)}
             >
               <Popup>
-                <div className="font-bold text-md">{scan.breed}</div>
+                <div className="font-bold text-md mb-2">{scan.breed}</div>
                 <img
                   src={scan.image_url}
                   alt={scan.breed}
-                  className="mt-2 w-full h-32 object-cover rounded-md"
+                  className="w-full h-32 object-cover rounded-md shadow-md hover:scale-105 transition-transform duration-300"
                 />
               </Popup>
             </Marker>
@@ -217,11 +220,11 @@ export default function BreedMapPage() {
         )}
       </MapContainer>
 
+      {/* Marker + Popup Styles */}
       <style>{`
         .marker-pulse {
-          background-color: #fff;
-          width: 12px;
-          height: 12px;
+          width: 14px;
+          height: 14px;
           border-radius: 50%;
           border: 2px solid #fff;
           box-shadow: 0 0 6px rgba(0,0,0,0.5);
@@ -242,16 +245,13 @@ export default function BreedMapPage() {
         }
         @keyframes pulse {
           0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
-          100% { transform: translate(-50%, -50%) scale(5); opacity: 0; }
+          100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
         }
         .leaflet-popup-content-wrapper {
           background: #1e293b;
           color: #fff;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
-        .leaflet-popup-content {
-          margin: 12px;
+          border-radius: 10px;
+          box-shadow: 0 6px 16px rgba(0,0,0,0.4);
         }
         .leaflet-popup-tip {
           background: #1e293b;
@@ -276,6 +276,6 @@ const createPulseIcon = (breed: string): DivIcon => {
   return L.divIcon({
     html: `<div class="marker-pulse" style="background-color: ${color};"></div>`,
     className: "",
-    iconSize: [12, 12],
+    iconSize: [14, 14],
   });
 };

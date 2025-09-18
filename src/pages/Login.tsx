@@ -33,10 +33,11 @@ export default function Login() {
     }
     setSending(false)
   }
-  //reset to email step if session changes
+
+  // Reset step if session changes
   useEffect(() => {
-    setStep("email");
-  }, [session]);
+    setStep("email")
+  }, [session])
 
   // Verify OTP
   const verifyOtp = async () => {
@@ -59,14 +60,14 @@ export default function Login() {
     }
   }
 
-  // Handle sign out
+  // Sign out
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) toast.error(error.message)
     else toast.success("Signed out!")
   }
 
-  // Handle OTP box typing
+  // OTP input handlers
   const handleChange = (val: string, idx: number) => {
     if (!/^\d?$/.test(val)) return
     const newOtp = [...otp]
@@ -76,7 +77,6 @@ export default function Login() {
     if (val && idx < 5) inputsRef.current[idx + 1]?.focus()
   }
 
-  // Handle OTP paste
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault()
     const pasteData = e.clipboardData.getData("text").slice(0, 6).split("")
@@ -85,38 +85,41 @@ export default function Login() {
     }
   }
 
-  // Loading state
+  // Loading spinner
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen ">
-        <div className="w-12 h-12 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-green-100 to-white">
+        <div className="w-14 h-14 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
   }
 
-  // Session state
+  // Logged-in state
   if (session) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen ">
-        <div className="bg-white shadow-lg rounded-2xl p-8 w-96 text-center">
-          <h1 className="text-2xl font-bold mb-4">✅ Logged in!</h1>
-          <h2 className="font-semibold mb-6">BPA ID: {session.user.user_metadata.id}</h2>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-green-100 to-white px-4">
+        <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-md text-center animate-fadeIn">
+          <h1 className="text-2xl font-bold mb-4 text-green-700">
+            ✅ Logged in!
+          </h1>
+          <h2 className="font-semibold mb-6 text-gray-700">
+            BPA ID: {session.user.user_metadata.id}
+          </h2>
           <button
             onClick={signOut}
-            className="w-full border border-gray-200 hover:bg-gray-100 flex items-center justify-center font-semibold text-black py-2 rounded-lg hover:cursor-pointer transition"
+            className="w-full border border-gray-200 hover:bg-gray-100 flex items-center justify-center font-semibold text-black py-2 rounded-lg transition transform hover:scale-105"
           >
             Log Out <LogOutIcon className="ml-2 w-4 h-4 text-green-800" />
-
           </button>
-          {session.user.user_metadata.role === "admin" &&
+          {session.user.user_metadata.role === "admin" && (
             <Link
               to="/admin"
-              className="w-full border mt-4 border-gray-200 hover:bg-gray-100 flex items-center justify-center font-semibold text-black py-2 rounded-lg hover:cursor-pointer transition"
-
+              className="w-full border mt-4 border-gray-200 hover:bg-gray-100 flex items-center justify-center font-semibold text-black py-2 rounded-lg transition transform hover:scale-105"
             >
-              Access Admin Portal <LogIn className="ml-2 text-green-800 w-4 h-4" />
+              Access Admin Portal{" "}
+              <LogIn className="ml-2 text-green-800 w-4 h-4" />
             </Link>
-          }
+          )}
         </div>
       </div>
     )
@@ -124,23 +127,26 @@ export default function Login() {
 
   // Login UI
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-96">
-        <h1 className="text-2xl font-bold flex items-center justify-center mb-6 text-center">Login <LogIn className="ml-2 w-6 h-6 text-green-500" /></h1>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-green-100 to-white px-4">
+      <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-md animate-fadeIn">
+        <h1 className="text-2xl font-bold flex items-center justify-center mb-6 text-gray-800">
+          Login{" "}
+          <LogIn className="ml-2 w-6 h-6 text-green-600 animate-bounce" />
+        </h1>
 
         {step === "email" && (
           <>
             <input
               type="email"
               placeholder="Enter your BPA registered email"
-              className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-100 mb-4"
+              className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4 transition"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
             <button
               onClick={sendOtp}
               disabled={sending || !email}
-              className="w-full border border-gray-200 hover:bg-gray-100  text-black cursor-pointer font-semibold py-2 rounded-lg transition"
+              className="w-full bg-green-600 text-white font-semibold py-2 rounded-lg shadow-md hover:bg-green-700 transition transform hover:scale-105 disabled:opacity-50"
             >
               {sending ? "Sending..." : "Send OTP"}
             </button>
@@ -159,7 +165,7 @@ export default function Login() {
                   type="text"
                   maxLength={1}
                   ref={(el: any) => (inputsRef.current[i] = el)}
-                  className="w-12 h-10 border-1  border-gray-400 rounded-sm text-center text-xl focus:ring-1 focus:ring-green-400"
+                  className="w-12 h-12 border border-gray-300 rounded-lg text-center text-xl focus:ring-2 focus:ring-green-500 transition transform hover:scale-105"
                   value={otp[i]}
                   onChange={(e) => handleChange(e.target.value, i)}
                 />
@@ -168,14 +174,18 @@ export default function Login() {
             <button
               onClick={verifyOtp}
               disabled={otp.join("").length !== 6}
-              className="w-full border-1 border-gray-200 hover:bg-gray-100 text-black py-2 rounded-lg cursor-pointer transition"
+              className="w-full bg-green-600 text-white font-semibold py-2 rounded-lg shadow-md hover:bg-green-700 transition transform hover:scale-105 disabled:opacity-50"
             >
               Verify OTP
             </button>
           </>
         )}
 
-        {error && <p className="text-red-600 text-center mt-4">{error}</p>}
+        {error && (
+          <p className="text-red-600 text-center mt-4 animate-pulse">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   )
