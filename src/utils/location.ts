@@ -53,11 +53,6 @@ export const getLocationFromIP = async (): Promise<Coordinates> => {
 
 // --- Hybrid Method ---
 export const getBestLocation = async (): Promise<Coordinates> => {
-  try {
-    const gps = await getCurrentLocation();
-    return gps;
-  } catch (err) {
-    const ip = await getLocationFromIP();
-    return ip;
-  }
+  const ip = await getLocationFromIP();
+  return ip;
 };

@@ -31,11 +31,7 @@ function useBreedInfo(breedName: string | null) {
       const { data, error } = await supabase
         .from("breeds")
         .select(`
-    *,
-    breed_origins (
-      parent_breed,
-      contribution_percentage
-    )
+    *
   `)
         .eq("name", breedName)
         .single(); //

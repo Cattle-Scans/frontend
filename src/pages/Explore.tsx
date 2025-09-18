@@ -35,12 +35,9 @@ interface ConfirmedCattle {
 // --- Fetch Functions ---
 const fetchBreeds = async (filters: any, search: string) => {
   let query = supabase.from("breeds").select(`
-    *,
-    breed_origins (
-      parent_breed,
-      contribution_percentage
-    )
+    *
     `);
+
   // breed_origins(region, country)
 
   if (filters.species && filters.species !== "All Species") {
