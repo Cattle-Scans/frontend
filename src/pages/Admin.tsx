@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import { toast } from "sonner";
+import type { User } from "@supabase/supabase-js";
 
 // ---- Types ----
 type Breed = {
@@ -79,7 +80,7 @@ export default function AdminPage() {
   const { session, loading } = useAuth();
   const user = session?.user;
 
-  const [activeTab, setActiveTab] = useState<"upload" | "origins" | "scans" | "confirmed">("upload");
+  const [activeTab, setActiveTab] = useState<"upload" | "origins" | "scans" | "confirmed" | "query">("upload");
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-50 to-green-100">
@@ -98,7 +99,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-red-50 to-red-100">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
-          <div className="text-red-600 mb-4">
+          <div className="text-red-500 mb-4">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-16 w-16 mx-auto"
@@ -135,6 +136,8 @@ export default function AdminPage() {
           { key: "origins", label: "Manage Origins" },
           { key: "scans", label: "Confirm Scans" },
           { key: "confirmed", label: "Upload Confirmed Images" },
+          // { key: "query", label: "FLWorkers Id Search" },
+
         ].map((tab) => (
           <button
             key={tab.key}
@@ -151,15 +154,145 @@ export default function AdminPage() {
 
       {activeTab === "upload" && <ManageBreeds />}
       {activeTab === "origins" && <ManageOrigins />}
-      {activeTab === "scans" && <ConfirmScans />}
-      {activeTab === "confirmed" && <UploadConfirmedImage />}
+      {activeTab === "scans" && <ConfirmScans user={user} />}
+      {activeTab === "confirmed" && <UploadConfirmedImage user={user} />}
+      {/* {activeTab === "query" && <FLWquery />} */}
+
     </div>
   );
 }
 
-// ---- ManageBreeds (patched with expandable info) ----
+// function FLWquery() {
+//   const [searchId, setSearchId] = useState("");
+//   const [submittedId, setSubmittedId] = useState("");
+
+//   const handleSearch = () => {
+//     setSubmittedId(searchId.trim());
+//   };
+
+//   // Fetch user from auth.users table
+//   const { data: user = [], isLoading: usersLoading } = useQuery({
+//     queryKey: ["auth_users", submittedId],
+//     queryFn: async () => {
+//       if (!submittedId) return [];
+//       const { data: user, error } = await supabase.rpc("get_user_by_id", { search_id: submittedId });
+//       if (error) {
+//         toast.error(error.message); throw error;
+//       }
+//       return user
+//     },
+//     enabled: !!submittedId,
+//     retry: 2,
+//   });
+
+//   const foundUser = user; // only one user should match
+//   // Fetch all cattle scans
+//   const { data: userScans = [], isLoading: scansLoading } = useQuery({
+//     queryKey: ["cattle_scans"],
+//     queryFn: async () => {
+//       const { data, error } = await supabase.from("cattle_scans").select("*").eq("scanned_by_user_id", foundUser?.id);
+//       if (error) throw error;
+//       return data;
+//     },
+//     enabled: !!foundUser,
+//   });
+
+//   // Fetch all confirmed scans
+//   const { data: userConfirmed = [], isLoading: confirmedLoading } = useQuery({
+//     queryKey: ["confirmed_cattle_breeds"],
+//     queryFn: async () => {
+//       const { data, error } = await supabase.from("confirmed_cattle_breeds").select("*").eq("confirmed_by_user_id", foundUser?.id);
+//       if (error) throw error;
+//       return data;
+//     },
+//     enabled: !!foundUser,
+//   });
+
+
+
+//   return (
+//     <div className="bg-white p-6 rounded-2xl shadow max-w-3xl">
+//       <h2 className="text-xl font-bold text-green-800 mb-4">User Scanner</h2>
+
+//       <div className="flex mb-4 space-x-2">
+//         <input
+//           type="text"
+//           placeholder="Enter cattlescans ID or bpa ID"
+//           value={searchId}
+//           onChange={(e) => setSearchId(e.target.value)}
+//           className="flex-1 border p-2 rounded"
+//         />
+//         <button
+//           onClick={handleSearch}
+//           className="px-4 py-2 bg-green-600 cursor-pointer text-white rounded-xl hover:bg-green-700 transition"
+//         >
+//           Search
+//         </button>
+//       </div>
+
+//       {submittedId && (
+//         <div>
+//           {usersLoading || scansLoading || confirmedLoading ? (
+//             <div className="text-gray-500">Loading...</div>
+//           ) : !foundUser ? (
+//             <p className="text-red-500">No user found for this ID.</p>
+//           ) : (
+//             <div className="space-y-4">
+//               <div className="p-3 bg-green-50 rounded-lg">
+//                 <h3 className="font-semibold mb-2">User Info</h3>
+//                 <p><b>Auth ID:</b> {foundUser.id}</p>
+//                 <p><b>Email:</b> {foundUser.email}</p>
+//                 <p><b>User Metadata ID:</b> {foundUser.user_metadata?.id || "N/A"}</p>
+//                 <pre className="bg-white border p-2 rounded text-xs max-h-40 overflow-auto">
+//                   {JSON.stringify(foundUser.user_metadata, null, 2)}
+//                 </pre>
+//               </div>
+
+//               <div className="p-3 bg-green-50 rounded-lg">
+//                 <h3 className="font-semibold mb-2">Cattle Scans ({userScans.length})</h3>
+//                 {userScans.length === 0 ? (
+//                   <p className="text-gray-500">No scans found.</p>
+//                 ) : (
+//                   <ul className="list-disc ml-5 text-sm max-h-48 overflow-auto">
+//                     {userScans.map((s) => (
+//                       <li key={s.id}>
+//                         ID: {s.id}, Uploaded: {new Date(s.created_at).toLocaleString()}
+//                       </li>
+//                     ))}
+//                   </ul>
+//                 )}
+//               </div>
+
+//               <div className="p-3 bg-green-50 rounded-lg">
+//                 <h3 className="font-semibold mb-2">Confirmed Scans ({userConfirmed.length})</h3>
+//                 {userConfirmed.length === 0 ? (
+//                   <p className="text-gray-500">No confirmed scans found.</p>
+//                 ) : (
+//                   <ul className="list-disc ml-5 text-sm max-h-48 overflow-auto">
+//                     {userConfirmed.map((c) => (
+//                       <li key={c.id}>
+//                         ID: {c.id}, Breed: {c.breed}, Confirmed: {new Date(c.created_at).toLocaleString()}
+//                       </li>
+//                     ))}
+//                   </ul>
+//                 )}
+//               </div>
+//             </div>
+//           )}
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
 function ManageBreeds() {
-  const { data: breeds = [] } = useQuery({ queryKey: ["breeds"], queryFn: fetchBreeds });
+  const { data: breeds = [], isLoading } = useQuery({ queryKey: ["breeds"], queryFn: fetchBreeds });
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -180,7 +313,12 @@ function ManageBreeds() {
       <UploadBreedForm />
       <div className="bg-white p-6 rounded-2xl shadow">
         <h2 className="text-xl font-bold mb-4 text-green-800">Existing Breeds</h2>
-        {breeds.map((breed) => (<>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center h-32">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-green-600 border-opacity-70"></div>
+          </div>
+        ) : breeds.map((breed) => (<>
           <div key={breed.name} className="border-b flex justify-between items-center py-3">
             <button
               onClick={() => setExpandedId(expandedId === breed.name ? null : breed.name)}
@@ -193,7 +331,9 @@ function ManageBreeds() {
               className=" py-1 px-3 bg-red-500 text-white cursor-pointer rounded-lg hover:bg-red-600 transition"
 
             >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteMutation.isPending && deleteMutation.variables === breed.name
+                ? "Deleting..."
+                : "Delete"}
             </button>
 
           </div>
@@ -218,7 +358,8 @@ function ManageBreeds() {
             </div >
           )}
         </>
-        ))}
+        ))
+        }
       </div>
     </div >
   );
@@ -243,7 +384,7 @@ function UploadBreedForm() {
         const filePath = `images/${Date.now()}-${file.name}`;
         const { error: uploadError } = await supabase.storage
           .from("cnb")
-          .upload(filePath, file);
+          .upload(filePath, file, { upsert: true });
         if (uploadError) throw uploadError;
 
         const { data: urlData } = supabase.storage
@@ -428,7 +569,7 @@ function UploadBreedForm() {
 
 // ---- Manage Origins ----
 function ManageOrigins() {
-  const { data: breeds = [] } = useQuery({ queryKey: ["breeds"], queryFn: fetchBreeds });
+  const { data: breeds = [], isLoading } = useQuery({ queryKey: ["breeds"], queryFn: fetchBreeds });
   const { register, handleSubmit, reset } = useForm<BreedOrigin>();
   const queryClient = useQueryClient();
 
@@ -457,7 +598,7 @@ function ManageOrigins() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  const { data: origins = [] } = useQuery({
+  const { data: origins = [], isLoading: originsLoading } = useQuery({
     queryKey: ["origins"], queryFn: async () => {
       const { data, error } = await supabase.from("breed_origins").select("*");
       if (error) throw error;
@@ -467,64 +608,65 @@ function ManageOrigins() {
 
   return (
     <div className="grid lg:grid-cols-2 gap-8">
-      <form
-        onSubmit={handleSubmit((data) => insertMutation.mutate(data))}
-        className="space-y-4 bg-white p-6 rounded-2xl shadow"
-      >
+      <form onSubmit={handleSubmit((data) => insertMutation.mutate(data))} className="space-y-4 bg-white p-6 rounded-2xl shadow">
         <h2 className="text-xl font-bold text-green-800 mb-4">Add Breed Origin</h2>
         <select {...register("breed", { required: true })} className="w-full border p-2 rounded">
           <option value="">Select breed</option>
-          {breeds.map((b) => (
-            <option key={b.name} value={b.name}>{b.name}</option>
-          ))}
+          {breeds.map((b) => <option key={b.name} value={b.name}>{b.name}</option>)}
         </select>
         <select {...register("parent_breed", { required: true })} className="w-full border p-2 rounded">
           <option value="">Select parent breed</option>
-          {breeds.map((b) => (
-            <option key={b.name} value={b.name}>{b.name}</option>
-          ))}
+          {breeds.map((b) => <option key={b.name} value={b.name}>{b.name}</option>)}
         </select>
         <input type="number" {...register("contribution_percentage")} placeholder="Contribution %" className="w-full border p-2 rounded" />
-        <button
-          type="submit"
-          className="w-full px-4 py-2 bg-green-600 text-white rounded-xl shadow cursor-pointer hover:bg-green-700 transition"
-        >
+        <button type="submit" className="w-full px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700 transition disabled:opacity-50">
           {insertMutation.isPending ? "Saving..." : "Save"}
         </button>
       </form>
 
       <div className="bg-white p-6 rounded-2xl shadow">
         <h2 className="text-xl font-bold mb-4 text-green-800">Existing Origins</h2>
-        {origins.map((origin) => (
-          <div key={origin.id} className="flex justify-between items-center p-3 border-b">
-            <span>{origin.breed} ← {origin.parent_breed} {origin.contribution_percentage}%</span>
-            <button
-              onClick={() => deleteMutation.mutate(origin.id)}
-              className="px-3 py-1 bg-red-500 text-white cursor-pointer rounded-lg hover:bg-red-600 transition"
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </button>
+        {(originsLoading || isLoading) ? (
+          <div className="flex justify-center items-center h-32">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-green-600 border-opacity-70"></div>
           </div>
-        ))}
+        ) : origins.length === 0 ? (
+          <p className="text-gray-500">No origins found.</p>
+        ) : (
+          origins.map((origin) => (
+            <div key={origin.id} className="flex justify-between items-center p-3 border-b">
+              <span>{origin.breed} ← {origin.parent_breed} {origin.contribution_percentage}%</span>
+              <button
+                onClick={() => deleteMutation.mutate(origin.id)}
+                className="px-3 py-1 bg-red-500 text-white cursor-pointer rounded-lg hover:bg-red-600 transition"
+              >
+                {deleteMutation.isPending && deleteMutation.variables === origin.id ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          ))
+        )}
       </div>
     </div>
+
   );
 }
 
-// ---- Confirm Scans ----
+// ---- Confirm scans ----
 // (Unchanged except UI improvements in earlier parts)
 // ---- ConfirmScans (patched with delete confirmed images) ----
 // ---- ConfirmScans (with filters) ----
-function ConfirmScans() {
-  const { data: scans = [] } = useQuery({ queryKey: ["scans"], queryFn: fetchScans });
-  const { data: confirmed = [] } = useQuery({ queryKey: ["confirmed"], queryFn: fetchConfirmed });
-  const { data: breeds = [] } = useQuery({ queryKey: ["breeds"], queryFn: fetchBreeds });
+
+function ConfirmScans({ user }: { user: User }) {
+  const { data: scans = [], isLoading: scansLoading } = useQuery({ queryKey: ["scans"], queryFn: fetchScans });
+  const { data: confirmed = [], isLoading: confirmedLoading } = useQuery({ queryKey: ["confirmed"], queryFn: fetchConfirmed });
+  const { data: breeds = [], isLoading: breedsLoading } = useQuery({ queryKey: ["breeds"], queryFn: fetchBreeds });
   const queryClient = useQueryClient();
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedBreed, setSelectedBreed] = useState<Record<string, string>>({});
   const [filterFlagged, setFilterFlagged] = useState<"all" | "flagged" | "notFlagged">("all");
   const [filterHelpful, setFilterHelpful] = useState<"all" | "helpful" | "notHelpful">("all");
+  const [searchUserId, setSearchUserId] = useState<string>(""); // <-- ID search
 
   // Mutation to confirm a scan
   const confirmMutation = useMutation({
@@ -533,6 +675,7 @@ function ConfirmScans() {
         scan_id: scan.id,
         image_url: scan.image_url,
         breed,
+        confirmed_by_user_id: user.id,
       });
       if (error) throw error;
     },
@@ -558,6 +701,8 @@ function ConfirmScans() {
 
   // --- Filter unconfirmed scans ---
   const unconfirmedScans = scans
+    .filter(scans => !confirmed.some(c => c.scan_id === scans.id)) // Exclude confirmed
+    .filter((scan) => !searchUserId || scan.scanned_by_user_id === searchUserId)
     .filter((scan) => {
       if (filterFlagged === "flagged") return scan.flagged_for_inspection === true;
       if (filterFlagged === "notFlagged") return scan.flagged_for_inspection === false;
@@ -569,126 +714,153 @@ function ConfirmScans() {
       return true;
     });
 
+  // --- Filter confirmed scans ---
+  const confirmedScans = confirmed.filter((c) => !searchUserId || c.confirmed_by_user_id === searchUserId);
+
   return (
-    <div className="grid md:grid-cols-2 gap-6">
-      {/* Unconfirmed scans */}
-      <div className="bg-white p-6 rounded-2xl shadow">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-green-800 text-xl">Unconfirmed Scans</h2>
-          {/* Filter bar */}
-          <div className="flex space-x-2">
-            <select
-              value={filterFlagged}
-              onChange={(e) => setFilterFlagged(e.target.value as any)}
-              className="border rounded px-2 py-1 text-sm"
-            >
-              <option value="all">All</option>
-              <option value="flagged">Flagged</option>
-              <option value="notFlagged">Not Flagged</option>
-            </select>
-            <select
-              value={filterHelpful}
-              onChange={(e) => setFilterHelpful(e.target.value as any)}
-              className="border rounded px-2 py-1 text-sm"
-            >
-              <option value="all">All</option>
-              <option value="helpful">Helpful</option>
-              <option value="notHelpful">Not Helpful</option>
-            </select>
-          </div>
-        </div>
-
-        {unconfirmedScans.map((scan) => (
-          <div key={scan.id} className=" pb-4">
-            <button
-              className="text-green-700 underline cursor-pointer hover:text-green-900"
-              onClick={() => setExpandedId(expandedId === scan.id ? null : scan.id)}
-            >
-              {scan.id}
-            </button>
-            {expandedId === scan.id && (
-              <div className="mt-2 p-3 bg-green-50 rounded-lg">
-                <img
-                  src={scan.image_url}
-                  alt="Scan"
-                  className="w-full h-48 object-cover rounded-lg mb-3"
-                />
-                <p className="text-sm text-gray-600 mb-2">
-                  Uploaded: {new Date(scan.created_at).toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-600 mb-2">
-                  Location: {scan.location ? JSON.stringify(scan.location) : "N/A"}
-                </p>
-                <p className="text-sm text-gray-600 mb-2">
-                  Flagged: {scan.flagged_for_inspection ? "Yes" : "No"}{" "}
-                  {scan.flagged_for_inspection && `(${scan.inspection_reason || "No reason"})`}
-                </p>
-                <p className="text-sm text-gray-600 mb-2">
-                  Helpful: {scan.is_helpful === true ? "Yes" : scan.is_helpful === false ? "No" : "N/A"}
-                </p>
-                <div className="bg-white border p-2 rounded text-xs max-h-40 overflow-auto mb-3">
-                  <p className="text-sm text-gray-600 mb-2">
-                    AI Prediction:
-                  </p>
-                  <pre>{JSON.stringify(scan.ai_prediction, null, 2)}</pre>
-                </div>
-
-                {/* Breed selection + confirm */}
-                <select
-                  value={selectedBreed[scan.id] || ""}
-                  onChange={(e) =>
-                    setSelectedBreed((prev) => ({ ...prev, [scan.id]: e.target.value }))
-                  }
-                  className="w-full border p-2 rounded mb-3"
-                >
-                  <option value="">Select breed</option>
-                  {breeds.map((b) => (
-                    <option key={b.name} value={b.name}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  disabled={confirmMutation.isPending || !selectedBreed[scan.id]}
-                  onClick={() =>
-                    confirmMutation.mutate({ scan, breed: selectedBreed[scan.id] })
-                  }
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg shadow cursor-pointer hover:bg-green-700 transition disabled:opacity-50"
-                >
-                  {confirmMutation.isPending ? "Confirming..." : "Confirm Scan"}
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+    <div>
+      {/* User ID search input */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search scans by User ID"
+          value={searchUserId}
+          onChange={(e) => setSearchUserId(e.target.value)}
+          className="bg-white border-gray-200 border-2 rounded-xl p-4 w-full"
+        />
       </div>
 
-      {/* Confirmed images */}
-      <div className="bg-white p-6 rounded-2xl shadow">
-        <h2 className="font-bold text-green-800 mb-4 text-xl">Confirmed Images</h2>
-        {confirmed.map((item) => (
-          <div key={item.id} className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-3">
-              <img
-                src={item.image_url}
-                alt="Confirmed"
-                className="w-20 h-20 object-cover rounded-lg border"
-              />
-              <div>
-                <p className="font-semibold">{item.breed}</p>
-                <p className="text-xs text-gray-500">
-                  Confirmed on {new Date(item.created_at).toLocaleString()}
-                </p>
-              </div>
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Unconfirmed scans */}
+        <div className="bg-white p-6 rounded-2xl shadow">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-green-800 text-xl">Unconfirmed Scans</h2>
+            <div className="flex space-x-2">
+              <select
+                value={filterFlagged}
+                onChange={(e) => setFilterFlagged(e.target.value as any)}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="all">All</option>
+                <option value="flagged">Flagged</option>
+                <option value="notFlagged">Not Flagged</option>
+              </select>
+              <select
+                value={filterHelpful}
+                onChange={(e) => setFilterHelpful(e.target.value as any)}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="all">All</option>
+                <option value="helpful">Helpful</option>
+                <option value="notHelpful">Not Helpful</option>
+              </select>
             </div>
-            <button
-              onClick={() => deleteConfirmed.mutate(item.id)}
-              className="px-3 py-1 bg-red-500 text-white cursor-pointer rounded-lg hover:bg-red-600 transition"
-            >
-              {deleteConfirmed.isPending ? "Deleting..." : "Delete"}
-            </button>
           </div>
-        ))}
+
+          {scansLoading || breedsLoading ? (
+            <div className="flex justify-center items-center h-32">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-green-600 border-opacity-70"></div>
+            </div>
+          ) : unconfirmedScans.length === 0 ? (
+            <p className="text-gray-500">No unconfirmed scans.</p>
+          ) : (
+            unconfirmedScans.map((scan) => (
+              <div key={scan.id} className="pb-4">
+                <button
+                  className="text-green-700 underline cursor-pointer hover:text-green-900"
+                  onClick={() => setExpandedId(expandedId === scan.id ? null : scan.id)}
+                >
+                  {scan.id}
+                </button>
+                {expandedId === scan.id && (
+                  <div className="mt-2 p-3 bg-green-50 rounded-lg">
+                    <img src={scan.image_url} alt="Scan" className="w-full h-48 object-cover rounded-lg mb-3" />
+                    <p className="text-sm text-gray-600 mb-2">
+                      Uploaded: {new Date(scan.created_at).toLocaleString()}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Location: {scan.location ? JSON.stringify(scan.location) : "N/A"}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Flagged: {scan.flagged_for_inspection ? "Yes" : "No"}{" "}
+                      {scan.flagged_for_inspection && `(${scan.inspection_reason || "No reason"})`}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Helpful: {scan.is_helpful === true ? "Yes" : scan.is_helpful === false ? "No" : "N/A"}
+                    </p>
+                    <div className="bg-white border p-2 rounded text-xs max-h-40 overflow-auto mb-3">
+                      <pre>{JSON.stringify(scan.ai_prediction, null, 2)}</pre>
+                    </div>
+
+                    <select
+                      value={selectedBreed[scan.id] || ""}
+                      onChange={(e) => setSelectedBreed((prev) => ({ ...prev, [scan.id]: e.target.value }))}
+                      className="w-full border p-2 rounded mb-3"
+                    >
+                      <option value="">Select breed</option>
+                      {breeds.map((b) => (
+                        <option key={b.name} value={b.name}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => {
+                        if (!selectedBreed[scan.id]) return toast.error("Please select a breed");
+                        confirmMutation.mutate({ scan, breed: selectedBreed[scan.id] });
+                      }}
+                      className="w-full px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700 transition"
+                    >
+                      {confirmMutation.isPending && confirmMutation.variables?.scan.id === scan.id
+                        ? "Confirming..."
+                        : "Confirm"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Confirmed scans */}
+        <div className="bg-white p-6 rounded-2xl shadow">
+          <h2 className="font-bold text-green-800 text-xl mb-4">Confirmed Scans</h2>
+          {confirmedLoading ? (
+            <div className="flex justify-center items-center h-32">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-green-600 border-opacity-70"></div>
+            </div>
+          ) : confirmedScans.length === 0 ? (
+            <p className="text-gray-500">No confirmed scans.</p>
+          ) : (
+            confirmedScans.map((c) => (
+              <div key={c.id} className="pb-2">
+                <div className="flex justify-between items-center">
+                  <button
+                    className="text-green-700 underline cursor-pointer hover:text-green-900"
+                    onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
+                  >
+                    {c.breed} ({new Date(c.created_at).toLocaleDateString()})
+                  </button>
+                  <button
+                    onClick={() => deleteConfirmed.mutate(c.id)}
+                    className="px-3 py-1 bg-red-500 text-white cursor-pointer rounded-lg hover:bg-red-600 transition"
+                  >
+                    {deleteConfirmed.isPending && deleteConfirmed.variables === c.id ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+
+                {expandedId === c.id && (
+                  <div className="mt-2 p-3 bg-green-50 rounded-lg">
+                    <img src={c.image_url} alt="Confirmed Scan" className="w-full h-48 object-cover rounded-lg mb-3" />
+                    <p className="text-sm text-gray-600 mb-2">Confirmed on: {new Date(c.created_at).toLocaleString()}</p>
+                    <p className="text-sm text-gray-600 mb-2">Scan ID: {c.scan_id || "N/A"}</p>
+                    <p className="text-sm text-gray-600 mb-2">Confirmed by: {c.confirmed_by_user_id || "N/A"}</p>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
@@ -697,43 +869,61 @@ function ConfirmScans() {
 
 
 // ---- Upload Confirmed Image ----
-function UploadConfirmedImage() {
+// ---- Upload Confirmed Images (Mass Upload) ----
+function UploadConfirmedImage({ user }: { user: User }) {
   const { data: breeds = [] } = useQuery({ queryKey: ["breeds"], queryFn: fetchBreeds });
-  const { register, handleSubmit, reset } = useForm<{
+  const { register, handleSubmit, reset, watch } = useForm<{
     breed: string;
-    confirmed_image: FileList;
+    confirmed_images: FileList;
   }>();
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (data: { breed: string; confirmed_image: FileList }) => {
-      if (!data.confirmed_image || data.confirmed_image.length === 0) {
-        throw new Error("Please upload an image");
+    mutationFn: async (data: { breed: string; confirmed_images: FileList }) => {
+      if (!data.confirmed_images || data.confirmed_images.length === 0) {
+        throw new Error("Please upload at least one image");
       }
-      const file = data.confirmed_image[0];
-      const filePath = `images/${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("cnb")
-        .upload(filePath, file);
-      if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("cnb")
-        .getPublicUrl(filePath);
+      const uploadedUrls: string[] = [];
 
-      const { error } = await supabase.from("confirmed_cattle_breeds").insert({
+      // Loop through all selected images
+      for (let i = 0; i < data.confirmed_images.length; i++) {
+        const file = data.confirmed_images[i];
+        const filePath = `images/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("cnb")
+          .upload(filePath, file, { upsert: true });
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from("cnb")
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(urlData.publicUrl);
+      }
+
+      // Insert all uploaded images into DB
+      const inserts = uploadedUrls.map((url) => ({
         breed: data.breed,
-        image_url: urlData.publicUrl,
-      });
+        image_url: url,
+        confirmed_by_user_id: user.id
+      }));
+
+      const { error } = await supabase
+        .from("confirmed_cattle_breeds")
+        .insert(inserts);
+
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["confirmed"] });
       reset();
-      toast.success("Confirmed image uploaded successfully");
+      toast.success("All confirmed images uploaded successfully");
     },
     onError: (err: any) => toast.error(err.message),
   });
+
+  const selectedFiles = watch("confirmed_images");
 
   return (
     <form
@@ -741,8 +931,10 @@ function UploadConfirmedImage() {
       className="space-y-4 bg-white p-6 rounded-2xl shadow max-w-md"
     >
       <h2 className="text-xl font-bold text-green-800 mb-4">
-        Upload Confirmed Image
+        Mass Upload Confirmed Images
       </h2>
+
+      {/* Select breed */}
       <select
         {...register("breed", { required: true })}
         className="w-full border p-2 rounded"
@@ -754,16 +946,33 @@ function UploadConfirmedImage() {
           </option>
         ))}
       </select>
+
+      {/* Multiple file input */}
       <input
         type="file"
-        {...register("confirmed_image", { required: true })}
+        multiple
+        {...register("confirmed_images", { required: true })}
         className="w-full border p-2 rounded"
       />
+
+      {/* File preview */}
+      {selectedFiles && selectedFiles.length > 0 && (
+        <div className="text-sm text-gray-600">
+          <p className="font-semibold mb-1">Selected files:</p>
+          <ul className="list-disc ml-5">
+            {Array.from(selectedFiles).map((file, i) => (
+              <li key={i}>{file.name}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <button
         type="submit"
-        className="w-full px-4 py-2 bg-green-600 text-white rounded-xl shadow cursor-pointer hover:bg-green-700 transition"
+        disabled={mutation.isPending}
+        className="w-full px-4 py-2 bg-green-600 text-white rounded-xl shadow cursor-pointer hover:bg-green-700 transition disabled:opacity-50"
       >
-        {mutation.isPending ? "Uploading..." : "Upload"}
+        {mutation.isPending ? "Uploading..." : "Upload All"}
       </button>
     </form>
   );

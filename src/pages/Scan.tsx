@@ -100,7 +100,7 @@ export default function Scan() {
       const fileName = `images/${Date.now()}-${file.name}`;
       const { error } = await supabase.storage
         .from("cnb")
-        .upload(fileName, file);
+        .upload(fileName, file, { upsert: true });
 
       if (error) throw new Error(error.message);
 
