@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { Search, X } from "lucide-react";
 
@@ -34,11 +34,7 @@ interface ConfirmedCattle {
 
 // --- Fetch Functions ---
 const fetchBreeds = async (filters: any, search: string) => {
-  let query = supabase.from("breeds").select(`
-    *
-    `);
-
-  // breed_origins(region, country)
+  let query = supabase.from("breeds").select("*");
 
   if (filters.species && filters.species !== "All Species") {
     query = query.eq("species", filters.species);
@@ -76,19 +72,13 @@ const fetchBreeds = async (filters: any, search: string) => {
   return data as Breed[];
 };
 
-const fetchConfirmedImages = async ({
-  pageParam = 0,
-  breedId,
-}: {
-  pageParam?: number;
-  breedId: string;
-}): Promise<ConfirmedCattle[]> => {
+// Fetch 4 random confirmed images
+const fetchConfirmedImages = async (breedId: string): Promise<ConfirmedCattle[]> => {
   const { data, error } = await supabase
     .from("confirmed_cattle_breeds")
     .select("id,image_url")
-    .eq("breed_id", breedId)
-    .order("created_at", { ascending: false })
-    .range(pageParam * 12, pageParam * 12 + 11);
+    .eq("breed", breedId)
+    .limit(4);
 
   if (error) throw error;
   return data || [];
@@ -96,7 +86,6 @@ const fetchConfirmedImages = async ({
 
 // --- Explore Page ---
 export default function ExplorePage() {
-
   const [filters, setFilters] = useState({
     species: "All Species",
     status: "All Status",
@@ -117,14 +106,11 @@ export default function ExplorePage() {
     queryFn: () => fetchBreeds(filters, search),
   });
 
-  const confirmedImagesQuery = useInfiniteQuery({
-    queryKey: ["confirmed_cattle_breeds", selectedBreed?.id],
-    queryFn: ({ pageParam = 0 }) =>
-      fetchConfirmedImages({ pageParam, breedId: selectedBreed?.id || "" }),
-    getNextPageParam: (lastPage: any, pages: any) =>
-      lastPage.length === 12 ? pages.length : undefined,
+  const { data: confirmedImages } = useQuery({
+    queryKey: ["confirmed_cattle_breeds", selectedBreed?.name],
+    queryFn: () => fetchConfirmedImages(selectedBreed?.name || ""),
     enabled: !!selectedBreed,
-  } as any);
+  });
 
   return (
     <div className="min-h-screen px-6 py-10">
@@ -254,12 +240,12 @@ export default function ExplorePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {breeds && breeds.map((breed) => (
               <div
-                key={breed.id}
+                key={breed.name}
                 className="bg-white shadow-md rounded-xl p-4 hover:shadow-xl cursor-pointer transition"
                 onClick={() => setSelectedBreed(breed)}
               >
                 <img
-                  src={breed.stock_img_url || "https://placehold.co/300x200"}
+                  src={breed.stock_img_url || "https://static.vecteezy.com/system/resources/thumbnails/018/884/279/small_2x/cow-mammal-animal-head-vector.jpg"}
                   alt={breed.name}
                   loading="lazy"
                   className="w-full h-40 object-cover rounded-lg mb-3"
@@ -339,7 +325,7 @@ export default function ExplorePage() {
               <div className="p-6 bg-gray-50 overflow-y-auto max-h-[80vh]">
                 <h3 className="font-semibold text-lg mb-4">Confirmed Images</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  {confirmedImagesQuery.data?.pages.flat().map((img: any) => (
+                  {confirmedImages?.map((img) => (
                     <img
                       key={img.id}
                       src={img.image_url}
@@ -349,16 +335,8 @@ export default function ExplorePage() {
                     />
                   ))}
                 </div>
-                {confirmedImagesQuery.hasNextPage && (
-                  <button
-                    onClick={() => confirmedImagesQuery.fetchNextPage()}
-                    disabled={confirmedImagesQuery.isFetchingNextPage}
-                    className="mt-4 w-full py-2 bg-green-100 rounded-lg hover:bg-green-200"
-                  >
-                    {confirmedImagesQuery.isFetchingNextPage
-                      ? "Loading..."
-                      : "Load More"}
-                  </button>
+                {(!confirmedImages || confirmedImages.length === 0) && (
+                  <p className="text-sm text-gray-500">No confirmed images yet.</p>
                 )}
               </div>
             </div>

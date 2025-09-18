@@ -4,6 +4,8 @@ import Scan from "./pages/Scan";
 import Login from "./pages/Login";
 import BreedMapPage from "./pages/BreedMap";
 import ExplorePage from "./pages/Explore";
+import AdminPage from "./pages/Admin";
+import { useAuth } from "./hooks/useAuth";
 
 function App() {
   const location = useLocation(); // get current route
@@ -58,6 +60,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/breed-map" element={<BreedMapPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+
         </Routes>
       </div>
     </>
