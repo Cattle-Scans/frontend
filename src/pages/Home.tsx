@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { Download } from "lucide-react"; // ✅ nice modern download icon
 
 export default function Home() {
