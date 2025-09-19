@@ -11,10 +11,15 @@ import {
 import { toast } from "sonner"
 import { Link } from "react-router-dom"
 
+interface Prediction {
+  label: string
+  confidence: number
+}
+
 interface CattleScan {
   id: string
   image_url: string
-  ai_prediction: { label: string; confidence: number }[]
+  ai_prediction: Prediction[] | string | null
   flagged_for_inspection: boolean
   created_at: string
   confirmed_breed?: string | null
@@ -133,7 +138,8 @@ export default function Login() {
           image_url,
           ai_prediction,
           flagged_for_inspection,
-          created_at
+          created_at,
+          comment
         `
         )
         .eq("scanned_by_user_id", session.user.id)
@@ -205,6 +211,20 @@ export default function Login() {
     page * perPage
   )
   const totalPages = Math.ceil(filteredHistory.length / perPage)
+
+  // ✅ Utility: normalize ai_prediction into an array
+  const parsePredictions = (pred: any): Prediction[] => {
+    if (!pred) return []
+    if (typeof pred === "string") {
+      try {
+        return JSON.parse(pred)
+      } catch {
+        return []
+      }
+    }
+    if (Array.isArray(pred)) return pred
+    return []
+  }
 
   // Loading spinner for auth
   if (loading) {
@@ -296,11 +316,12 @@ export default function Login() {
 
               {/* History list */}
               <div className="space-y-4">
-                {paginatedHistory.length < 1 ?
+                {paginatedHistory.length < 1 ? (
                   <div className="flex justify-center items-center mt-20 py-20">
-                    <div className="w-20 h-20 border-4"> No results found</div>
+                    <div className="text-gray-500">No results found</div>
                   </div>
-                  : paginatedHistory.map((scan) => (
+                ) : (
+                  paginatedHistory.map((scan) => (
                     <div
                       key={scan.id}
                       className="border rounded-xl p-4 shadow bg-white transition transform hover:scale-[1.01] animate-fadeIn"
@@ -338,11 +359,13 @@ export default function Login() {
                           <div>
                             <h3 className="font-semibold">Predictions</h3>
                             <ul className="list-disc list-inside text-sm text-gray-700">
-                              {scan.ai_prediction.map((p, i) => (
-                                <li key={i}>
-                                  {p.label} – {p.confidence.toFixed(2)}%
-                                </li>
-                              ))}
+                              {parsePredictions(scan.ai_prediction).map(
+                                (p, i) => (
+                                  <li key={i}>
+                                    {p.label} – {p.confidence.toFixed(2)}%
+                                  </li>
+                                )
+                              )}
                             </ul>
                           </div>
                           <div>
@@ -357,7 +380,9 @@ export default function Login() {
                             <input
                               type="checkbox"
                               checked={scan.flagged_for_inspection}
-                              onChange={(e) => toggleFlag(scan, e.target.checked)}
+                              onChange={(e) =>
+                                toggleFlag(scan, e.target.checked)
+                              }
                               className="w-5 h-5 accent-red-600"
                             />
                             <span>
@@ -367,15 +392,16 @@ export default function Login() {
                             </span>
                             <Flag
                               className={`w-4 h-4 ${scan.flagged_for_inspection
-                                ? "text-red-600"
-                                : "text-gray-400"
+                                  ? "text-red-600"
+                                  : "text-gray-400"
                                 }`}
                             />
                           </label>
                         </div>
                       )}
                     </div>
-                  ))}
+                  ))
+                )}
               </div>
 
               {/* Pagination */}
