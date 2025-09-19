@@ -331,13 +331,13 @@ export default function Scan() {
             {/* Prediction list */}
             <div className="space-y-2">
               {scanMutation.data.predictions
-                .sort((a, b) => b.confidence - a.confidence)
+                .sort((a, b) => b.confidence - a.confidence).slice(0, 3) //only 3 will be taken
                 .map((pred, i) => (
                   <div
                     key={pred.label}
                     className={`flex items-center justify-between p-3 rounded-xl border ${i === 0
-                        ? "bg-green-50 border-green-200"
-                        : "bg-gray-50 border-gray-200"
+                      ? "bg-green-50 border-green-200"
+                      : "bg-gray-50 border-gray-200"
                       }`}
                   >
                     <span className="font-medium text-gray-800">

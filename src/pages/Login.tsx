@@ -296,82 +296,86 @@ export default function Login() {
 
               {/* History list */}
               <div className="space-y-4">
-                {paginatedHistory.map((scan) => (
-                  <div
-                    key={scan.id}
-                    className="border rounded-xl p-4 shadow bg-white transition transform hover:scale-[1.01] animate-fadeIn"
-                  >
+                {paginatedHistory.length < 1 ?
+                  <div className="flex justify-center items-center mt-20 py-20">
+                    <div className="w-20 h-20 border-4"> No results found</div>
+                  </div>
+                  : paginatedHistory.map((scan) => (
                     <div
-                      className="flex justify-between items-center cursor-pointer"
-                      onClick={() =>
-                        setExpanded(expanded === scan.id ? null : scan.id)
-                      }
+                      key={scan.id}
+                      className="border rounded-xl p-4 shadow bg-white transition transform hover:scale-[1.01] animate-fadeIn"
                     >
-                      <div>
-                        <p className="font-semibold text-gray-800">
-                          {new Date(scan.created_at).toLocaleString()}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {scan.confirmed_breed
-                            ? `✅ Confirmed: ${scan.confirmed_breed}`
-                            : "❌ Not confirmed"}
-                        </p>
-                      </div>
-                      {expanded === scan.id ? (
-                        <ChevronUp className="w-5 h-5 transition-transform rotate-180" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 transition-transform" />
-                      )}
-                    </div>
-
-                    {expanded === scan.id && (
-                      <div className="mt-4 space-y-3 animate-slideDown">
-                        <img
-                          src={scan.image_url}
-                          alt="scan"
-                          className="w-full max-h-64 object-cover rounded-lg shadow"
-                        />
+                      <div
+                        className="flex justify-between items-center cursor-pointer"
+                        onClick={() =>
+                          setExpanded(expanded === scan.id ? null : scan.id)
+                        }
+                      >
                         <div>
-                          <h3 className="font-semibold">Predictions</h3>
-                          <ul className="list-disc list-inside text-sm text-gray-700">
-                            {scan.ai_prediction.map((p, i) => (
-                              <li key={i}>
-                                {p.label} – {p.confidence.toFixed(2)}%
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Comment</h3>
-                          <p className="list-disc list-inside text-sm text-gray-700">
-                            {scan?.comment ?? "No comment provided."}
+                          <p className="font-semibold text-gray-800">
+                            {new Date(scan.created_at).toLocaleString()}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {scan.confirmed_breed
+                              ? `✅ Confirmed: ${scan.confirmed_breed}`
+                              : "❌ Not confirmed"}
                           </p>
                         </div>
-
-                        {/* Flag toggle */}
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={scan.flagged_for_inspection}
-                            onChange={(e) => toggleFlag(scan, e.target.checked)}
-                            className="w-5 h-5 accent-red-600"
-                          />
-                          <span>
-                            {scan.flagged_for_inspection
-                              ? "Marked for inspection"
-                              : "Not flagged"}
-                          </span>
-                          <Flag
-                            className={`w-4 h-4 ${scan.flagged_for_inspection
-                              ? "text-red-600"
-                              : "text-gray-400"
-                              }`}
-                          />
-                        </label>
+                        {expanded === scan.id ? (
+                          <ChevronUp className="w-5 h-5 transition-transform rotate-180" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 transition-transform" />
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {expanded === scan.id && (
+                        <div className="mt-4 space-y-3 animate-slideDown">
+                          <img
+                            src={scan.image_url}
+                            alt="scan"
+                            className="w-full max-h-64 object-cover rounded-lg shadow"
+                          />
+                          <div>
+                            <h3 className="font-semibold">Predictions</h3>
+                            <ul className="list-disc list-inside text-sm text-gray-700">
+                              {scan.ai_prediction.map((p, i) => (
+                                <li key={i}>
+                                  {p.label} – {p.confidence.toFixed(2)}%
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">Comment</h3>
+                            <p className="list-disc list-inside text-sm text-gray-700">
+                              {scan?.comment ?? "No comment provided."}
+                            </p>
+                          </div>
+
+                          {/* Flag toggle */}
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={scan.flagged_for_inspection}
+                              onChange={(e) => toggleFlag(scan, e.target.checked)}
+                              className="w-5 h-5 accent-red-600"
+                            />
+                            <span>
+                              {scan.flagged_for_inspection
+                                ? "Marked for inspection"
+                                : "Not flagged"}
+                            </span>
+                            <Flag
+                              className={`w-4 h-4 ${scan.flagged_for_inspection
+                                ? "text-red-600"
+                                : "text-gray-400"
+                                }`}
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
 
               {/* Pagination */}
