@@ -318,7 +318,7 @@ export default function Login() {
               <div className="space-y-4">
                 {paginatedHistory.length < 1 ? (
                   <div className="flex justify-center items-center mt-20 py-20">
-                    <div className="text-gray-500">No results found</div>
+                    <div className="text-gray-500">No History</div>
                   </div>
                 ) : (
                   paginatedHistory.map((scan) => (
@@ -392,8 +392,8 @@ export default function Login() {
                             </span>
                             <Flag
                               className={`w-4 h-4 ${scan.flagged_for_inspection
-                                  ? "text-red-600"
-                                  : "text-gray-400"
+                                ? "text-red-600"
+                                : "text-gray-400"
                                 }`}
                             />
                           </label>

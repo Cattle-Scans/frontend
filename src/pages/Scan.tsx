@@ -310,48 +310,60 @@ export default function Scan() {
             {/* Top Prediction */}
             {topPrediction && (
               <div className="text-center space-y-3">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {topPrediction.label}
-                </h3>
-                <div className="flex justify-center gap-2 text-green-600">
-                  <TrendingUp className="w-5 h-5" />
-                  <span className="font-semibold">
-                    {confidenceScore.toFixed(2)}% Confidence
-                  </span>
-                </div>
-                <div className="w-full max-w-md mx-auto h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-green-500 transition-all"
-                    style={{ width: `${confidenceScore}%` }}
-                  />
-                </div>
+
+                {confidenceScore < 50 ? (
+                  <div className="bg-red-50 border border-red-300 text-red-700 p-4 rounded-xl">
+                    Please try with a clearer image.
+                  </div>
+                ) : (
+                  <>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {topPrediction.label}
+                    </h3>
+                    <div className="flex justify-center gap-2 text-green-600">
+                      <TrendingUp className="w-5 h-5" />
+                      <span className="font-semibold">
+                        {confidenceScore.toFixed(2)}% Confidence
+                      </span>
+                    </div>
+                    <div className="w-full max-w-md mx-auto h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-green-500 transition-all"
+                        style={{ width: `${confidenceScore}%` }}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
             {/* Prediction list */}
-            <div className="space-y-2">
-              {scanMutation.data.predictions
-                .sort((a, b) => b.confidence - a.confidence).slice(0, 3) //only 3 will be taken
-                .map((pred, i) => (
-                  <div
-                    key={pred.label}
-                    className={`flex items-center justify-between p-3 rounded-xl border ${i === 0
-                      ? "bg-green-50 border-green-200"
-                      : "bg-gray-50 border-gray-200"
-                      }`}
-                  >
-                    <span className="font-medium text-gray-800">
-                      {pred.label}
-                    </span>
-                    <span className="font-semibold text-gray-700">
-                      {pred.confidence.toFixed(2)}%
-                    </span>
-                  </div>
-                ))}
-            </div>
+            {confidenceScore >= 50 && (
+              <div className="space-y-2">
+                {scanMutation.data.predictions
+                  .sort((a, b) => b.confidence - a.confidence)
+                  .slice(0, 3) // only top 3
+                  .map((pred, i) => (
+                    <div
+                      key={pred.label}
+                      className={`flex items-center justify-between p-3 rounded-xl border ${i === 0
+                        ? "bg-green-50 border-green-200"
+                        : "bg-gray-50 border-gray-200"
+                        }`}
+                    >
+                      <span className="font-medium text-gray-800">
+                        {pred.label}
+                      </span>
+                      <span className="font-semibold text-gray-700">
+                        {pred.confidence.toFixed(2)}%
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            )}
 
             {/* Breed Metadata */}
-            {breedInfo && (
+            {confidenceScore >= 50 && breedInfo && (
               <div className="bg-gray-50 rounded-xl p-6 shadow-inner text-sm text-gray-700 space-y-2">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">
                   Breed Information

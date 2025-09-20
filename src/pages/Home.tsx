@@ -20,7 +20,7 @@ export default function Home() {
 
           {/* Download Button with icon */}
           <a
-            href="https://github.com/Cattle-Scans/mobile/releases/download/v1.0.2/app-release.apk"
+            href="https://github.com/Cattle-Scans/mobile/releases/download/v1.0.3/app-release.apk"
             className="flex items-center justify-center gap-2 px-8 py-3 text-lg font-semibold
                        rounded-xl bg-gradient-to-r from-green-500 to-teal-600 text-white shadow-lg
                        hover:scale-105 hover:shadow-xl transition-transform duration-300"
